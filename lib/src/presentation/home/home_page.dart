@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sec_monitor/src/app/ui/ui.dart';
+import 'package:sec_monitor/src/di/di.dart';
 import 'package:sec_monitor/src/domain/service/service.dart';
 import 'package:sec_monitor/src/utils/utils.dart';
 
@@ -91,9 +92,9 @@ class _MonitorDataState extends State<MonitorData> {
   void initState() {
     super.initState();
 
-    connectivityManager = ConnectivityManager.internet();
-    batteryManager = BatteryManager();
-    locationManager = LocationManager();
+    connectivityManager = getIt<ConnectivityManager>();
+    batteryManager = getIt<BatteryManager>();
+    locationManager = getIt<LocationManager>();
   }
 
   @override
