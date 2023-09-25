@@ -7,7 +7,7 @@ String getCurrentTimestamp() {
 }
 
 String getTimestampFromEpoch(int epoch) {
-  final formatter = DateFormat('dd-MM-yyyy h:m:s');
+  final formatter = DateFormat('dd-MM-yyyy hh:mm:ss');
 
   return formatter.format(
     DateTime.fromMillisecondsSinceEpoch(epoch),

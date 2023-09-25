@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sec_monitor/src/app/ui/ui.dart';
 import 'package:sec_monitor/src/di/di.dart';
-import 'package:sec_monitor/src/domain/service/service.dart';
-import 'package:sec_monitor/src/utils/utils.dart';
+import 'package:sec_monitor/src/domain/notifier/notifier.dart';
+import 'package:sec_monitor/src/presentation/home/monitor_data_widget.dart';
+import 'package:sec_monitor/src/presentation/home/timestamp_widget.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   static const routeName = '/';
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<MonitorNotifier>.value(
+      value: getIt.get<MonitorNotifier>(),
+      child: const HomeView(),
+    );
+  }
+}
+
+class HomeView extends StatelessWidget {
+  const HomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +61,7 @@ class HomePage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Text(
-                    getCurrentTimestamp(),
-                    style: subTitleTextStyle,
-                  ),
+                  const TimestampWidget(),
                 ],
               ),
               const Spacer(),
@@ -71,160 +82,6 @@ class HomePage extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class MonitorData extends StatefulWidget {
-  const MonitorData({super.key});
-
-  @override
-  State<MonitorData> createState() => _MonitorDataState();
-}
-
-class _MonitorDataState extends State<MonitorData> {
-  late final ConnectivityManager connectivityManager;
-  late final BatteryManager batteryManager;
-  late final LocationManager locationManager;
-
-  @override
-  void initState() {
-    super.initState();
-
-    connectivityManager = getIt<ConnectivityManager>();
-    batteryManager = getIt<BatteryManager>();
-    locationManager = getIt<LocationManager>();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final themeExtension = Theme.of(context).extension<ColorsExtension>()!;
-
-    final bodyTextStyle = bodyNormal.copyWith(
-      fontWeight: FontWeight.bold,
-      color: themeExtension.enabledColor,
-    );
-
-    final bodyTextStyle2 = bodyNormal.copyWith(
-      fontWeight: FontWeight.bold,
-      color: themeExtension.disabledColor,
-    );
-
-    return Column(
-      children: [
-        MonitorDataRow(
-          title: 'Capture Count',
-          child: Text(
-            '0',
-            style: bodyTextStyle,
-          ),
-        ),
-        MonitorDataRow(
-          title: 'Frequency (min)',
-          child: Text(
-            '15',
-            style: bodyTextStyle,
-          ),
-        ),
-        StreamBuilder(
-          stream: connectivityManager.connectivityStateStream(),
-          builder: (context, snapshot) {
-            return switch (snapshot.data) {
-              true => MonitorDataRow(
-                  title: 'Connectivity',
-                  child: Text(
-                    'ON',
-                    style: bodyTextStyle,
-                  ),
-                ),
-              _ => MonitorDataRow(
-                  title: 'Connectivity',
-                  child: Text(
-                    'OFF',
-                    style: bodyTextStyle2,
-                  ),
-                )
-            };
-          },
-        ),
-        StreamBuilder(
-          stream: batteryManager.chargingStateStream(),
-          builder: (context, snapshot) {
-            return switch (snapshot.data) {
-              true => MonitorDataRow(
-                  title: 'Battery Charging',
-                  child: Text(
-                    'ON',
-                    style: bodyTextStyle,
-                  ),
-                ),
-              _ => MonitorDataRow(
-                  title: 'Battery Charging',
-                  child: Text(
-                    'OFF',
-                    style: bodyTextStyle2,
-                  ),
-                )
-            };
-          },
-        ),
-        FutureBuilder(
-          future: batteryManager.chargeLevel(),
-          builder: (context, snapshot) {
-            return MonitorDataRow(
-              title: 'Battery Charging',
-              child: Text(
-                '${snapshot.data}%',
-                style: bodyTextStyle,
-              ),
-            );
-          },
-        ),
-        StreamBuilder(
-          stream: locationManager.currentPositionStream(),
-          builder: (context, snapshot) {
-            return MonitorDataRow(
-              title: 'Location',
-              child: Text(
-                '${snapshot.data?.latitude}, ${snapshot.data?.longitude}',
-                style: bodyTextStyle,
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class MonitorDataRow extends StatelessWidget {
-  const MonitorDataRow({
-    super.key,
-    required this.title,
-    required this.child,
-  });
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: bodyNormal.copyWith(
-              fontWeight: FontWeight.bold,
-              color:
-                  Theme.of(context).extension<ColorsExtension>()!.enabledColor,
-            ),
-          ),
-          child,
-        ],
       ),
     );
   }
