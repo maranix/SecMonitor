@@ -85,6 +85,7 @@ class MonitorData extends StatefulWidget {
 class _MonitorDataState extends State<MonitorData> {
   late final ConnectivityManager connectivityManager;
   late final BatteryManager batteryManager;
+  late final LocationManager locationManager;
 
   @override
   void initState() {
@@ -92,6 +93,7 @@ class _MonitorDataState extends State<MonitorData> {
 
     connectivityManager = ConnectivityManager.internet();
     batteryManager = BatteryManager();
+    locationManager = LocationManager();
   }
 
   @override
@@ -178,12 +180,17 @@ class _MonitorDataState extends State<MonitorData> {
             );
           },
         ),
-        MonitorDataRow(
-          title: 'Location',
-          child: Text(
-            '31.684585, 58.632866',
-            style: bodyTextStyle,
-          ),
+        StreamBuilder(
+          stream: locationManager.currentPositionStream(),
+          builder: (context, snapshot) {
+            return MonitorDataRow(
+              title: 'Location',
+              child: Text(
+                '${snapshot.data?.latitude}, ${snapshot.data?.longitude}',
+                style: bodyTextStyle,
+              ),
+            );
+          },
         ),
       ],
     );
