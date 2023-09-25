@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sec_monitor/src/app/ui/text.dart';
-import 'package:sec_monitor/src/app/ui/theme.dart';
+import 'package:sec_monitor/src/app/ui/ui.dart';
+import 'package:sec_monitor/src/domain/service/service.dart';
 import 'package:sec_monitor/src/utils/utils.dart';
 
 class HomePage extends StatelessWidget {
@@ -11,10 +11,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeExtension = Theme.of(context).extension<ColorsExtension>()!;
-    final bodyTextStyle = bodyNormal.copyWith(
-      fontWeight: FontWeight.bold,
-      color: themeExtension.enabledColor,
-    );
 
     return Scaffold(
       body: SafeArea(
@@ -57,52 +53,7 @@ class HomePage extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              Column(
-                children: [
-                  MonitorDataRow(
-                    title: 'Capture Count',
-                    child: Text(
-                      '0',
-                      style: bodyTextStyle,
-                    ),
-                  ),
-                  MonitorDataRow(
-                    title: 'Frequence (min)',
-                    child: Text(
-                      '15',
-                      style: bodyTextStyle,
-                    ),
-                  ),
-                  MonitorDataRow(
-                    title: 'Connectivity',
-                    child: Text(
-                      'ON',
-                      style: bodyTextStyle,
-                    ),
-                  ),
-                  MonitorDataRow(
-                    title: 'Battery Charging',
-                    child: Text(
-                      'ON',
-                      style: bodyTextStyle,
-                    ),
-                  ),
-                  MonitorDataRow(
-                    title: 'Battery Charge',
-                    child: Text(
-                      '55%',
-                      style: bodyTextStyle,
-                    ),
-                  ),
-                  MonitorDataRow(
-                    title: 'Location',
-                    child: Text(
-                      '31.684585, 58.632866',
-                      style: bodyTextStyle,
-                    ),
-                  ),
-                ],
-              ),
+              const MonitorData(),
               const Spacer(),
               ElevatedButton(
                 onPressed: () => {},
@@ -120,6 +71,121 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class MonitorData extends StatefulWidget {
+  const MonitorData({super.key});
+
+  @override
+  State<MonitorData> createState() => _MonitorDataState();
+}
+
+class _MonitorDataState extends State<MonitorData> {
+  late final ConnectivityManager connectivityManager;
+  late final BatteryManager batteryManager;
+
+  @override
+  void initState() {
+    super.initState();
+
+    connectivityManager = ConnectivityManager.internet();
+    batteryManager = BatteryManager();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeExtension = Theme.of(context).extension<ColorsExtension>()!;
+
+    final bodyTextStyle = bodyNormal.copyWith(
+      fontWeight: FontWeight.bold,
+      color: themeExtension.enabledColor,
+    );
+
+    final bodyTextStyle2 = bodyNormal.copyWith(
+      fontWeight: FontWeight.bold,
+      color: themeExtension.disabledColor,
+    );
+
+    return Column(
+      children: [
+        MonitorDataRow(
+          title: 'Capture Count',
+          child: Text(
+            '0',
+            style: bodyTextStyle,
+          ),
+        ),
+        MonitorDataRow(
+          title: 'Frequency (min)',
+          child: Text(
+            '15',
+            style: bodyTextStyle,
+          ),
+        ),
+        FutureBuilder(
+          future: connectivityManager.isConnected(),
+          builder: (context, snapshot) {
+            return switch (snapshot.data) {
+              true => MonitorDataRow(
+                  title: 'Connectivity',
+                  child: Text(
+                    'ON',
+                    style: bodyTextStyle,
+                  ),
+                ),
+              _ => MonitorDataRow(
+                  title: 'Connectivity',
+                  child: Text(
+                    'OFF',
+                    style: bodyTextStyle2,
+                  ),
+                )
+            };
+          },
+        ),
+        FutureBuilder(
+          future: batteryManager.isCharging(),
+          builder: (context, snapshot) {
+            return switch (snapshot.data) {
+              true => MonitorDataRow(
+                  title: 'Battery Charging',
+                  child: Text(
+                    'ON',
+                    style: bodyTextStyle,
+                  ),
+                ),
+              _ => MonitorDataRow(
+                  title: 'Battery Charging',
+                  child: Text(
+                    'OFF',
+                    style: bodyTextStyle2,
+                  ),
+                )
+            };
+          },
+        ),
+        FutureBuilder(
+          future: batteryManager.chargeLevel(),
+          builder: (context, snapshot) {
+            return MonitorDataRow(
+              title: 'Battery Charging',
+              child: Text(
+                '${snapshot.data}%',
+                style: bodyTextStyle,
+              ),
+            );
+          },
+        ),
+        MonitorDataRow(
+          title: 'Location',
+          child: Text(
+            '31.684585, 58.632866',
+            style: bodyTextStyle,
+          ),
+        ),
+      ],
     );
   }
 }
