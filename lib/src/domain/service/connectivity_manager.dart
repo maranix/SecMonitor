@@ -1,20 +1,26 @@
 import 'dart:developer' as dev;
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:logging/logging.dart';
 
 abstract interface class ConnectivityManager {
   const ConnectivityManager();
 
-  factory ConnectivityManager.internet() =>
-      const _InternetConnectivityManager();
+  factory ConnectivityManager.internet({Connectivity? connectivity}) =>
+      _InternetConnectivityManager(connectivity: connectivity);
 
   Future<bool> isConnected();
   Future<bool> ping();
+  Stream<bool> connectivityStateStream();
 }
 
 final class _InternetConnectivityManager implements ConnectivityManager {
-  const _InternetConnectivityManager();
+  _InternetConnectivityManager({
+    Connectivity? connectivity,
+  }) : _connectivity = connectivity ?? Connectivity();
+
+  final Connectivity _connectivity;
 
   @override
   Future<bool> isConnected() async {
@@ -52,5 +58,17 @@ final class _InternetConnectivityManager implements ConnectivityManager {
     final result = await InternetAddress.lookup('example.com');
 
     return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
+  }
+
+  @override
+  Stream<bool> connectivityStateStream() {
+    return _connectivity.onConnectivityChanged.asyncMap(
+      (event) async {
+        return switch (event) {
+          ConnectivityResult.none => false,
+          _ => await isConnected(),
+        };
+      },
+    );
   }
 }

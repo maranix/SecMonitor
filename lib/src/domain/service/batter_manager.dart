@@ -6,6 +6,7 @@ abstract interface class BatteryManager {
 
   Future<bool> isCharging();
   Future<int> chargeLevel();
+  Stream<bool> chargingStateStream();
 }
 
 final class _BatteryManagerImpl implements BatteryManager {
@@ -26,5 +27,15 @@ final class _BatteryManagerImpl implements BatteryManager {
       BatteryState.charging => true,
       _ => false,
     };
+  }
+
+  @override
+  Stream<bool> chargingStateStream() {
+    return _battery.onBatteryStateChanged.map(
+      (state) => switch (state) {
+        BatteryState.charging => true,
+        _ => false,
+      },
+    );
   }
 }

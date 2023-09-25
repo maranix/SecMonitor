@@ -124,8 +124,8 @@ class _MonitorDataState extends State<MonitorData> {
             style: bodyTextStyle,
           ),
         ),
-        FutureBuilder(
-          future: connectivityManager.isConnected(),
+        StreamBuilder(
+          stream: connectivityManager.connectivityStateStream(),
           builder: (context, snapshot) {
             return switch (snapshot.data) {
               true => MonitorDataRow(
@@ -145,8 +145,8 @@ class _MonitorDataState extends State<MonitorData> {
             };
           },
         ),
-        FutureBuilder(
-          future: batteryManager.isCharging(),
+        StreamBuilder(
+          stream: batteryManager.chargingStateStream(),
           builder: (context, snapshot) {
             return switch (snapshot.data) {
               true => MonitorDataRow(
