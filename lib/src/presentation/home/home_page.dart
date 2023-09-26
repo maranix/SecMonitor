@@ -68,7 +68,7 @@ class HomeView extends StatelessWidget {
               const MonitorData(),
               const Spacer(),
               ElevatedButton(
-                onPressed: () => {},
+                onPressed: () => context.read<MonitorNotifier>().captureData(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: themeExtension.primaryColor,
                 ),

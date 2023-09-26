@@ -34,8 +34,7 @@ class _CaptureCount extends StatelessWidget {
       color: themeExtension.enabledColor,
     );
 
-    final count = context
-        .select<MonitorNotifier, int>((state) => state.data.captureCount);
+    final count = context.select<MonitorNotifier, int>((state) => state.data.captureCount);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -68,23 +67,69 @@ class _Frequency extends StatelessWidget {
       color: themeExtension.enabledColor,
     );
 
-    final frequency =
-        context.select<MonitorNotifier, int>((state) => state.data.frequency);
+    final frequency = context.select<MonitorNotifier, int>((state) => state.data.frequency);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Frequency (min)',
-            style: bodyTextStyle,
-          ),
-          Text(
-            '$frequency',
-            style: bodyTextStyle,
-          ),
-        ],
+    final notifier = context.read<MonitorNotifier>();
+
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) {
+            int freq = frequency;
+
+            return AlertDialog(
+              title: const Text(
+                'Update Frequency',
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+              ),
+              content: TextField(
+                style: const TextStyle(
+                  color: Colors.black,
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  if (value.isNotEmpty) {
+                    final input = int.parse(value);
+
+                    freq = input;
+                  }
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    notifier.updateFrequency(freq);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Update'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Frequency (min)',
+              style: bodyTextStyle,
+            ),
+            Text(
+              '$frequency',
+              style: bodyTextStyle,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -107,8 +152,7 @@ class _Connectivity extends StatelessWidget {
       color: themeExtension.disabledColor,
     );
 
-    final isConnected = context
-        .select<MonitorNotifier, bool>((state) => state.data.hasConnectivity);
+    final isConnected = context.select<MonitorNotifier, bool>((state) => state.data.hasConnectivity);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -146,8 +190,7 @@ class _Charging extends StatelessWidget {
       color: themeExtension.disabledColor,
     );
 
-    final isCharging =
-        context.select<MonitorNotifier, bool>((state) => state.data.isCharging);
+    final isCharging = context.select<MonitorNotifier, bool>((state) => state.data.isCharging);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -180,8 +223,7 @@ class _ChargePercentage extends StatelessWidget {
       color: themeExtension.enabledColor,
     );
 
-    final percentage =
-        context.select<MonitorNotifier, int>((state) => state.data.chargeLevel);
+    final percentage = context.select<MonitorNotifier, int>((state) => state.data.chargeLevel);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -189,7 +231,7 @@ class _ChargePercentage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Frequency (min)',
+            'Battery Charge',
             style: bodyTextStyle,
           ),
           Text(
@@ -214,8 +256,7 @@ class _Location extends StatelessWidget {
       color: themeExtension.enabledColor,
     );
 
-    final location = context
-        .select<MonitorNotifier, LocationData>((state) => state.data.location);
+    final location = context.select<MonitorNotifier, LocationData>((state) => state.data.location);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -223,7 +264,7 @@ class _Location extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Frequency (min)',
+            'Location',
             style: bodyTextStyle,
           ),
           Text(

@@ -17,11 +17,11 @@ class MonitorNotifier extends ChangeNotifier {
 
   late MonitorData _monitorData;
   MonitorData get data => _monitorData;
-
   final ConnectivityManager _connectivityManager;
   final BatteryManager _batteryManager;
   final LocationManager _locationManager;
 
+  StreamSubscription<void>? _dataSyncStream;
   StreamSubscription<bool>? _connectivityStream;
   StreamSubscription<bool>? _chargingStateStream;
   StreamSubscription<LocationData>? _locationPositionStream;
@@ -29,26 +29,41 @@ class MonitorNotifier extends ChangeNotifier {
 
   void _init() {
     _monitorData = MonitorData.empty;
+    _startDataStreams();
+  }
 
-    _connectivityStream =
-        _connectivityManager.connectivityStateStream().listen((isConnected) {
+  void incrementCaptureCount() {
+    _monitorData = _monitorData.copyWith(
+      captureCount: _monitorData.captureCount + 1,
+    );
+
+    notifyListeners();
+  }
+
+  void updateFrequency(int value) {
+    _monitorData = _monitorData.copyWith(frequency: value);
+    _restartDataSyncStream();
+    notifyListeners();
+  }
+
+  Future<void> captureData() async {
+    incrementCaptureCount();
+  }
+
+  void _startDataStreams() {
+    _connectivityStream = _connectivityManager.connectivityStateStream().listen((isConnected) {
       _monitorData = _monitorData.copyWith(hasConnectivity: isConnected);
-      notifyListeners();
     });
 
-    _chargingStateStream =
-        _batteryManager.chargingStateStream().listen((isCharging) async {
+    _chargingStateStream = _batteryManager.chargingStateStream().listen((isCharging) async {
       _monitorData = _monitorData.copyWith(
         isCharging: isCharging,
         chargeLevel: await _batteryManager.chargeLevel(),
       );
-      notifyListeners();
     });
 
-    _locationPositionStream =
-        _locationManager.currentPositionStream().listen((location) {
+    _locationPositionStream = _locationManager.currentPositionStream().listen((location) {
       _monitorData = _monitorData.copyWith(location: location);
-      notifyListeners();
     });
 
     _timestampStream = Stream.periodic(
@@ -56,14 +71,36 @@ class MonitorNotifier extends ChangeNotifier {
       (count) => DateTime.now().millisecondsSinceEpoch + count,
     ).listen((epoch) {
       _monitorData = _monitorData.copyWith(timestamp: epoch);
-      notifyListeners();
     });
+
+    _dataSyncStream = Stream.periodic(
+      Duration(seconds: _monitorData.frequency),
+      (_) async {
+        await captureData();
+      },
+    ).listen((_) {});
   }
 
-  void close() {
+  void _restartDataSyncStream() {
+    _dataSyncStream?.cancel();
+
+    _dataSyncStream = Stream.periodic(
+      Duration(seconds: _monitorData.frequency),
+      (_) async {
+        await captureData();
+      },
+    ).listen((_) {});
+  }
+
+  void _stopDataStreams() {
     _connectivityStream?.cancel();
     _chargingStateStream?.cancel();
     _locationPositionStream?.cancel();
     _timestampStream?.cancel();
+    _dataSyncStream?.cancel();
+  }
+
+  void close() {
+    _stopDataStreams();
   }
 }
