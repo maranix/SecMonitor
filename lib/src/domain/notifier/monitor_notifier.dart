@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:sec_monitor/src/data/model/model.dart';
+import 'package:sec_monitor/src/data/repository/data_repository.dart';
 import 'package:sec_monitor/src/di/di.dart';
 import 'package:sec_monitor/src/domain/service/service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,9 +13,11 @@ class MonitorNotifier extends ChangeNotifier {
     required ConnectivityManager connectivityManager,
     required BatteryManager batteryManager,
     required LocationManager locationManager,
+    DataRepository? repository,
   })  : _connectivityManager = connectivityManager,
         _batteryManager = batteryManager,
-        _locationManager = locationManager {
+        _locationManager = locationManager,
+        _repository = repository ?? DataRepository() {
     _init();
   }
 
@@ -23,6 +26,7 @@ class MonitorNotifier extends ChangeNotifier {
   final ConnectivityManager _connectivityManager;
   final BatteryManager _batteryManager;
   final LocationManager _locationManager;
+  final DataRepository _repository;
 
   StreamSubscription<void>? _dataSyncStream;
   StreamSubscription<bool>? _connectivityStream;
@@ -51,12 +55,20 @@ class MonitorNotifier extends ChangeNotifier {
   }
 
   Future<void> captureData() async {
+    _monitorData = _monitorData.copyWith(
+      hasConnectivity: await _connectivityManager.isConnected(),
+      chargeLevel: await _batteryManager.chargeLevel(),
+      location: await _locationManager.getCurrentPosition(),
+    );
+
+    _repository.syncData(_monitorData);
     incrementCaptureCount();
   }
 
   void _startDataStreams() {
     _connectivityStream = _connectivityManager.connectivityStateStream().listen((isConnected) {
       _monitorData = _monitorData.copyWith(hasConnectivity: isConnected);
+      notifyListeners();
     });
 
     _chargingStateStream = _batteryManager.chargingStateStream().listen((isCharging) async {
@@ -64,10 +76,12 @@ class MonitorNotifier extends ChangeNotifier {
         isCharging: isCharging,
         chargeLevel: await _batteryManager.chargeLevel(),
       );
+      notifyListeners();
     });
 
     _locationPositionStream = _locationManager.currentPositionStream().listen((location) {
       _monitorData = _monitorData.copyWith(location: location);
+      notifyListeners();
     });
 
     _timestampStream = Stream.periodic(
@@ -75,12 +89,13 @@ class MonitorNotifier extends ChangeNotifier {
       (count) => DateTime.now().millisecondsSinceEpoch + count,
     ).listen((epoch) {
       _monitorData = _monitorData.copyWith(timestamp: epoch);
+      notifyListeners();
     });
 
     _dataSyncStream = Stream.periodic(
       Duration(minutes: _monitorData.frequency),
-      (_) async {
-        await captureData();
+      (_) {
+        captureData();
       },
     ).listen((_) {});
   }
@@ -90,8 +105,8 @@ class MonitorNotifier extends ChangeNotifier {
 
     _dataSyncStream = Stream.periodic(
       Duration(minutes: _monitorData.frequency),
-      (_) async {
-        await captureData();
+      (_) {
+        captureData();
       },
     ).listen((_) {});
   }
@@ -128,7 +143,8 @@ class MonitorNotifier extends ChangeNotifier {
     _dataSyncStream?.cancel();
   }
 
-  void close() {
+  Future<void> close() async {
     _stopDataStreams();
+    await _repository.awaitAllPendingWrites();
   }
 }
