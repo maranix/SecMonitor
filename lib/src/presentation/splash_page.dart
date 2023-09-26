@@ -91,9 +91,7 @@ class SplashPageState extends State<SplashPage> {
       } on Exception {
         await _showPermissionDeniedDialog();
       }
-
-      _redirectToHome();
-    });
+    }).whenComplete(() => _redirectToHome());
   }
 
   @override
