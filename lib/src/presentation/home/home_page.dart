@@ -7,19 +7,39 @@ import 'package:sec_monitor/src/domain/service/service.dart';
 import 'package:sec_monitor/src/presentation/home/monitor_data_widget.dart';
 import 'package:sec_monitor/src/presentation/home/timestamp_widget.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   static const routeName = '/';
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late final MonitorNotifier notifier;
+
+  @override
+  void initState() {
+    super.initState();
+
+    MonitorNotifier(
+      connectivityManager: getIt<ConnectivityManager>(instanceName: 'Internet'),
+      batteryManager: getIt<BatteryManager>(),
+      locationManager: getIt<LocationManager>(),
+    );
+  }
+
+  @override
+  void dispose() {
+    notifier.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<MonitorNotifier>(
-      create: (context) => MonitorNotifier(
-        connectivityManager: getIt<ConnectivityManager>(instanceName: 'Internet'),
-        batteryManager: getIt<BatteryManager>(),
-        locationManager: getIt<LocationManager>(),
-      ),
+      create: (context) => notifier,
       child: const HomeView(),
     );
   }
