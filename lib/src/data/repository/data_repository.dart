@@ -18,7 +18,7 @@ final class DataRepository {
           ),
         );
 
-    await converter.doc(data.timestamp.toString()).set(data);
+    converter.doc(data.timestamp.toString()).set(data);
   }
 
   Future<void> awaitAllPendingWrites() async {

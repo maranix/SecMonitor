@@ -23,7 +23,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    MonitorNotifier(
+    notifier = MonitorNotifier(
       connectivityManager: getIt<ConnectivityManager>(instanceName: 'Internet'),
       batteryManager: getIt<BatteryManager>(),
       locationManager: getIt<LocationManager>(),

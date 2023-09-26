@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:sec_monitor/src/data/model/model.dart';
@@ -56,21 +55,17 @@ class MonitorNotifier extends ChangeNotifier {
   }
 
   Future<void> captureData() async {
-    await Isolate.run(() {
-      _repository.syncData(_monitorData);
-      incrementCaptureCount();
-    });
+    _repository.syncData(_monitorData);
+    incrementCaptureCount();
   }
 
   void _startDataStreams() {
-    _connectivityStream =
-        _connectivityManager.connectivityStateStream().listen((isConnected) {
+    _connectivityStream = _connectivityManager.connectivityStateStream().listen((isConnected) {
       _monitorData = _monitorData.copyWith(hasConnectivity: isConnected);
       notifyListeners();
     });
 
-    _chargingStateStream =
-        _batteryManager.chargingStateStream().listen((isCharging) async {
+    _chargingStateStream = _batteryManager.chargingStateStream().listen((isCharging) async {
       _monitorData = _monitorData.copyWith(
         isCharging: isCharging,
         chargeLevel: await _batteryManager.chargeLevel(),
@@ -78,8 +73,7 @@ class MonitorNotifier extends ChangeNotifier {
       notifyListeners();
     });
 
-    _locationPositionStream =
-        _locationManager.currentPositionStream().listen((location) {
+    _locationPositionStream = _locationManager.currentPositionStream().listen((location) {
       _monitorData = _monitorData.copyWith(location: location);
       notifyListeners();
     });
@@ -94,7 +88,12 @@ class MonitorNotifier extends ChangeNotifier {
 
     _dataSyncStream = Stream.periodic(
       Duration(seconds: _monitorData.frequency),
-      (_) {
+      (_) async {
+        final chargeLevel = await _batteryManager.chargeLevel();
+        _monitorData = _monitorData.copyWith(
+          chargeLevel: chargeLevel,
+          hasConnectivity: await _connectivityManager.isConnected(),
+        );
         captureData();
       },
     ).listen((_) {});
@@ -105,8 +104,10 @@ class MonitorNotifier extends ChangeNotifier {
 
     _dataSyncStream = Stream.periodic(
       Duration(seconds: _monitorData.frequency),
-      (_) {
-        captureData();
+      (_) async {
+        final chargeLevel = await _batteryManager.chargeLevel();
+        _monitorData = _monitorData.copyWith(chargeLevel: chargeLevel);
+        await captureData();
       },
     ).listen((_) {});
   }
