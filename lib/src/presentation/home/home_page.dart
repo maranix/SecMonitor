@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sec_monitor/src/app/ui/ui.dart';
 import 'package:sec_monitor/src/di/di.dart';
 import 'package:sec_monitor/src/domain/notifier/notifier.dart';
+import 'package:sec_monitor/src/domain/service/service.dart';
 import 'package:sec_monitor/src/presentation/home/monitor_data_widget.dart';
 import 'package:sec_monitor/src/presentation/home/timestamp_widget.dart';
 
@@ -13,8 +14,12 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<MonitorNotifier>.value(
-      value: getIt.get<MonitorNotifier>(),
+    return ChangeNotifierProvider<MonitorNotifier>(
+      create: (context) => MonitorNotifier(
+        connectivityManager: getIt<ConnectivityManager>(instanceName: 'Internet'),
+        batteryManager: getIt<BatteryManager>(),
+        locationManager: getIt<LocationManager>(),
+      ),
       child: const HomeView(),
     );
   }

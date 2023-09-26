@@ -54,12 +54,10 @@ final class _LocationManagerImpl implements LocationManager {
   Future<bool> openAppSettings() => Geolocator.openAppSettings();
 
   Future<bool> _handlePermissionCheck(LocationPermission permission) async {
-    if (permission == LocationPermission.denied) {
-      final result = await Geolocator.requestPermission();
+    final result = await Geolocator.requestPermission();
 
-      if (result == LocationPermission.deniedForever) {
-        throw const PermissionDeniedException('');
-      }
+    if (result == LocationPermission.deniedForever) {
+      throw const PermissionDeniedException('');
     }
 
     if (permission == LocationPermission.denied) {

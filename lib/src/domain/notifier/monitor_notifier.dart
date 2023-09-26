@@ -28,7 +28,7 @@ class MonitorNotifier extends ChangeNotifier {
   StreamSubscription<int>? _timestampStream;
 
   void _init() {
-    _monitorData = MonitorData.empty;
+    _monitorData = MonitorData.empty.copyWith(timestamp: DateTime.now().millisecondsSinceEpoch);
     _startDataStreams();
   }
 
