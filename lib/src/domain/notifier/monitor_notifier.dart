@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:sec_monitor/src/data/model/model.dart';
+import 'package:sec_monitor/src/di/di.dart';
 import 'package:sec_monitor/src/domain/service/service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MonitorNotifier extends ChangeNotifier {
   MonitorNotifier({
@@ -28,7 +31,7 @@ class MonitorNotifier extends ChangeNotifier {
   StreamSubscription<int>? _timestampStream;
 
   void _init() {
-    _monitorData = MonitorData.empty.copyWith(timestamp: DateTime.now().millisecondsSinceEpoch);
+    _monitorData = _restoreSession();
     _startDataStreams();
   }
 
@@ -37,6 +40,7 @@ class MonitorNotifier extends ChangeNotifier {
       captureCount: _monitorData.captureCount + 1,
     );
 
+    _saveSession();
     notifyListeners();
   }
 
@@ -74,7 +78,7 @@ class MonitorNotifier extends ChangeNotifier {
     });
 
     _dataSyncStream = Stream.periodic(
-      Duration(seconds: _monitorData.frequency),
+      Duration(minutes: _monitorData.frequency),
       (_) async {
         await captureData();
       },
@@ -85,11 +89,35 @@ class MonitorNotifier extends ChangeNotifier {
     _dataSyncStream?.cancel();
 
     _dataSyncStream = Stream.periodic(
-      Duration(seconds: _monitorData.frequency),
+      Duration(minutes: _monitorData.frequency),
       (_) async {
         await captureData();
       },
     ).listen((_) {});
+  }
+
+  MonitorData _restoreSession() {
+    final instance = getIt<SharedPreferences>();
+
+    final data = instance.getString('monitor_data');
+
+    if (data != null) {
+      final json = jsonDecode(data) as Map<String, dynamic>;
+
+      return MonitorData.fromJson(json);
+    }
+
+    return MonitorData.empty.copyWith(
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  void _saveSession() {
+    final instance = getIt<SharedPreferences>();
+
+    final data = jsonEncode(_monitorData.toJson());
+
+    instance.setString('monitor_data', data);
   }
 
   void _stopDataStreams() {
